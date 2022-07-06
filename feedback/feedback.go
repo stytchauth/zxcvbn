@@ -18,7 +18,6 @@ type Feedback struct {
 
 // GetFeedback attempts to copy exactly from
 // https://github.com/dwolfhub/zxcvbn-python/blob/f596bef499c02bb6f0c8aef33b260364add2dc2b/zxcvbn/feedback.py
-// Comments present in areas where the algorithm diverges from the python library
 func GetFeedback(score int, sequence []*match.Match) Feedback {
 	if len(sequence) == 0 {
 		return Feedback{
