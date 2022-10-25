@@ -7,7 +7,7 @@ import (
 
 var (
 	StartUpper = regexp.MustCompile("^[A-Z][^A-Z]+$")
-	AllUpper   = regexp.MustCompile("^[^a-z]+$")
+	AllUpper   = regexp.MustCompile("^[^a-z\\d]+$")
 )
 
 // Feedback represents the feedback for a weak password
