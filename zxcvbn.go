@@ -1,6 +1,7 @@
 package zxcvbn
 
 import (
+	"context"
 	"time"
 	"unicode/utf8"
 
@@ -19,14 +20,23 @@ type Result struct {
 }
 
 func PasswordStrength(password string, userInputs []string) Result {
+	result, _ := PasswordStrengthWithContext(context.Background(), password, userInputs)
+	return result
+}
+
+// PasswordStrengthWithContext runs the strength check and returns early if ctx is cancelled.
+// If the context is cancelled mid-computation, the returned error will be non-nil and
+// the Result will be zero-valued (score 0, treated as weak).
+func PasswordStrengthWithContext(ctx context.Context, password string, userInputs []string) (Result, error) {
 	start := time.Now()
 	var result Result
 	if !utf8.ValidString(password) {
-		// Do not evaluate passwords containing invalid utf8
-		// => those will be reported as weak passwords
-		return result
+		return result, nil
 	}
-	matches := matching.Omnimatch(password, userInputs)
+	matches, err := matching.OmnimatchWithContext(ctx, password, userInputs)
+	if err != nil {
+		return result, err
+	}
 	seq := scoring.MostGuessableMatchSequence(password, matches, false)
 	end := time.Now()
 	calcTime := end.Nanosecond() - start.Nanosecond()
@@ -35,5 +45,5 @@ func PasswordStrength(password string, userInputs []string) Result {
 	result.Guesses = seq.Guesses
 	result.Score = guessesToScore(seq.Guesses)
 	result.Feedback = feedback.GetFeedback(result.Score, result.Sequence)
-	return result
+	return result, nil
 }
