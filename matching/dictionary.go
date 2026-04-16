@@ -1,6 +1,7 @@
 package matching
 
 import (
+	"context"
 	"strings"
 
 	"github.com/trustelem/zxcvbn/match"
@@ -11,9 +12,17 @@ type dictionaryMatch struct {
 }
 
 func (dm dictionaryMatch) Matches(password string) []*match.Match {
+	results, _ := dm.MatchesWithContext(context.Background(), password)
+	return results
+}
+
+func (dm dictionaryMatch) MatchesWithContext(ctx context.Context, password string) ([]*match.Match, error) {
 	var results []*match.Match
 
 	for dictionaryName, rankedDict := range dm.rankedDictionaries {
+		if ctx.Err() != nil {
+			return nil, ctx.Err()
+		}
 		for i := range password {
 			j := len(password) - 1
 			for delta := range password[i:] {
@@ -39,7 +48,7 @@ func (dm dictionaryMatch) Matches(password string) []*match.Match {
 	}
 
 	match.Sort(results)
-	return results
+	return results, nil
 }
 
 func (dm dictionaryMatch) withDict(name string, d rankedDictionnary) dictionaryMatch {

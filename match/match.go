@@ -1,6 +1,7 @@
 package match
 
 import (
+	"context"
 	"encoding/json"
 )
 
@@ -48,6 +49,10 @@ type Match struct {
 
 type Matcher interface {
 	Matches(password string) []*Match
+}
+
+type MatcherWithContext interface {
+	MatchesWithContext(ctx context.Context, password string) ([]*Match, error)
 }
 
 // ToString returns a string representation of a sequence of matches

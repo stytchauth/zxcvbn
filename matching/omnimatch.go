@@ -1,13 +1,20 @@
 package matching
 
 import (
+	"context"
+	"regexp"
+
 	"github.com/trustelem/zxcvbn/adjacency"
 	"github.com/trustelem/zxcvbn/frequency"
 	"github.com/trustelem/zxcvbn/match"
-	"regexp"
 )
 
 func Omnimatch(password string, userInputs []string) (matches []*match.Match) {
+	result, _ := OmnimatchWithContext(context.Background(), password, userInputs)
+	return result
+}
+
+func OmnimatchWithContext(ctx context.Context, password string, userInputs []string) ([]*match.Match, error) {
 	dictMatcher := defaultRankedDictionnaries.withDict("user_inputs", buildRankedDict(userInputs))
 
 	matchers := []match.Matcher{
@@ -21,11 +28,23 @@ func Omnimatch(password string, userInputs []string) (matches []*match.Match) {
 		dateMatch{},
 	}
 
+	var matches []*match.Match
 	for _, m := range matchers {
-		matches = append(matches, m.Matches(password)...)
+		if ctx.Err() != nil {
+			return nil, ctx.Err()
+		}
+		if mctx, ok := m.(match.MatcherWithContext); ok {
+			ms, err := mctx.MatchesWithContext(ctx, password)
+			if err != nil {
+				return nil, err
+			}
+			matches = append(matches, ms...)
+		} else {
+			matches = append(matches, m.Matches(password)...)
+		}
 	}
 	match.Sort(matches)
-	return matches
+	return matches, nil
 }
 
 var (

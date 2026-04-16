@@ -2,6 +2,7 @@ package matching
 
 import (
 	"bytes"
+	"context"
 	// "github.com/trustelem/zxcvbn/entropy"
 	"github.com/trustelem/zxcvbn/match"
 	"sort"
@@ -14,16 +15,28 @@ type l33tMatch struct {
 }
 
 func (lm l33tMatch) Matches(password string) []*match.Match {
+	results, _ := lm.MatchesWithContext(context.Background(), password)
+	return results
+}
+
+func (lm l33tMatch) MatchesWithContext(ctx context.Context, password string) ([]*match.Match, error) {
 	matches := []*match.Match{}
 
 	substitutions := relevantSubtable(password, lm.table)
 
 	for _, sub := range enumerateLeetSubs(substitutions) {
+		if ctx.Err() != nil {
+			return nil, ctx.Err()
+		}
 		if len(sub) == 0 {
 			break
 		}
 		subbedPassword := translate(password, sub)
-		for _, m := range lm.dm.Matches(subbedPassword) {
+		dictMatches, err := lm.dm.MatchesWithContext(ctx, subbedPassword)
+		if err != nil {
+			return nil, err
+		}
+		for _, m := range dictMatches {
 			token := password[m.I : m.J+1]
 			if len(token) <= 1 {
 				// filter single-character l33t matches to reduce noise.
@@ -48,7 +61,7 @@ func (lm l33tMatch) Matches(password string) []*match.Match {
 	}
 
 	match.Sort(matches)
-	return matches
+	return matches, nil
 }
 
 func translate(password string, sub map[string]string) string {
