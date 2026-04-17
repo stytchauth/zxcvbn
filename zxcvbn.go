@@ -37,7 +37,10 @@ func PasswordStrengthWithContext(ctx context.Context, password string, userInput
 	if err != nil {
 		return result, err
 	}
-	seq := scoring.MostGuessableMatchSequence(password, matches, false)
+	seq, err := scoring.MostGuessableMatchSequenceWithContext(ctx, password, matches, false)
+	if err != nil {
+		return result, err
+	}
 	end := time.Now()
 	calcTime := end.Nanosecond() - start.Nanosecond()
 	result.CalcTime = round(float64(calcTime)*time.Nanosecond.Seconds(), .5, 3)
