@@ -24,6 +24,9 @@ func (dm dictionaryMatch) MatchesWithContext(ctx context.Context, password strin
 			return nil, ctx.Err()
 		}
 		for i := range password {
+			if ctx.Err() != nil {
+				return nil, ctx.Err()
+			}
 			j := len(password) - 1
 			for delta := range password[i:] {
 				if delta > 0 {

@@ -1,6 +1,7 @@
 package scoring
 
 import (
+	"context"
 	"math"
 	"sort"
 
@@ -45,7 +46,14 @@ type Result struct {
 //    sequences before length-3. assuming at minimum D guesses per pattern type,
 //    D^(l-1) approximates Sum(D^i for i in [1..l-1]
 //
-func MostGuessableMatchSequence(password string, matches []*match.Match, excludeAdditive bool) (result Result) {
+func MostGuessableMatchSequence(password string, matches []*match.Match, excludeAdditive bool) Result {
+	result, _ := MostGuessableMatchSequenceWithContext(context.Background(), password, matches, excludeAdditive)
+	return result
+}
+
+// MostGuessableMatchSequenceWithContext is like MostGuessableMatchSequence but
+// returns early with an error if ctx is cancelled before scoring completes.
+func MostGuessableMatchSequenceWithContext(ctx context.Context, password string, matches []*match.Match, excludeAdditive bool) (result Result, err error) {
 	n := len(password)
 	validIndexes := make([]bool, n)
 	for i := range password {
@@ -200,6 +208,9 @@ func MostGuessableMatchSequence(password string, matches []*match.Match, exclude
 	}
 
 	for k := 0; k < n; k++ {
+		if ctx.Err() != nil {
+			return result, ctx.Err()
+		}
 		for _, m := range matchesByJ[k] {
 			if m.I > 0 {
 				for l := 0; l < n; l++ {
